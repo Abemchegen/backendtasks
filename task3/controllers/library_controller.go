@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"strconv"
+	"strings"
 	"task3/models"
 	"task3/services"
 )
@@ -24,6 +25,8 @@ func (lc *LibraryController) AddBook(scanner *bufio.Scanner) {
 	book := models.Book{Title: title, Author: author, Status: "Available"}
 	lc.Library.AddBook(book)
 	fmt.Println("Book added successfully.")
+	fmt.Println(strings.Repeat("-", 75))
+
 }
 
 func (lc *LibraryController) RemoveBook(scanner *bufio.Scanner) {
@@ -44,7 +47,7 @@ func (lc *LibraryController) RemoveBook(scanner *bufio.Scanner) {
 	} else {
 		fmt.Printf("removed book with id: %d\n", id)
 	}
-
+	fmt.Println(strings.Repeat("-", 75))
 }
 func (lc *LibraryController) AddMember(scanner *bufio.Scanner) {
 	fmt.Println("enter name of the member")
@@ -52,6 +55,8 @@ func (lc *LibraryController) AddMember(scanner *bufio.Scanner) {
 	name := scanner.Text()
 	id := lc.Library.AddMember(name)
 	fmt.Printf("Your ID is %v\n", id)
+	fmt.Println(strings.Repeat("-", 75))
+
 }
 func (lc *LibraryController) BorrowBook(scanner *bufio.Scanner) {
 	fmt.Print("Enter book ID to borrow: ")
@@ -81,6 +86,7 @@ func (lc *LibraryController) BorrowBook(scanner *bufio.Scanner) {
 	} else {
 		fmt.Printf("book with ID %d was borrowed by member %d", id, memberID)
 	}
+	fmt.Println(strings.Repeat("-", 75))
 
 }
 
@@ -112,41 +118,49 @@ func (lc *LibraryController) ReturnBook(scanner *bufio.Scanner) {
 	} else {
 		fmt.Printf("book with IF %d returned by member with ID %d\n", id, memberID)
 	}
+	fmt.Println(strings.Repeat("-", 75))
+
 }
 func (lc *LibraryController) ListAvailableBooks() {
 	books := lc.Library.ListAvailableBooks()
-	fmt.Println("the list of available books are: ")
-
+	fmt.Println("List of Available Books:")
+	fmt.Println(strings.Repeat("-", 75))
 	if len(books) != 0 {
+		fmt.Printf("| %-5s | %-30s | %-30s |\n", "ID", "Title", "Author")
+		fmt.Println(strings.Repeat("-", 75))
 		for _, book := range books {
-			fmt.Printf("ID: %d, Title: %s, Author: %s\n", book.ID, book.Title, book.Author)
+			fmt.Printf("| %-5d | %-30s | %-30s |\n", book.ID, book.Title, book.Author)
 		}
 	} else {
-		fmt.Println("none")
+		fmt.Println("None")
 	}
-
+	fmt.Println(strings.Repeat("-", 75))
 }
 
 func (lc *LibraryController) ListBorrowedBooks(scanner *bufio.Scanner) {
 	fmt.Print("Enter member ID to list borrowed books: ")
 	scanner.Scan()
-	memberID, err := strconv.Atoi(scanner.Text())
+	memberIDStr := strings.TrimSpace(scanner.Text())
+	memberID, err := strconv.Atoi(memberIDStr)
 	for err != nil {
 		fmt.Println("Invalid member ID. Please enter a number.")
 		fmt.Print("Enter member ID to list borrowed books: ")
 		scanner.Scan()
-		memberID, err = strconv.Atoi(scanner.Text())
+		memberIDStr = strings.TrimSpace(scanner.Text())
+		memberID, err = strconv.Atoi(memberIDStr)
 	}
 
 	books := lc.Library.ListBorrowedBooks(memberID)
-	fmt.Printf("books borrowed by member with if %d: \n", memberID)
-
+	fmt.Printf("Books borrowed by member with ID %d:\n", memberID)
+	fmt.Println(strings.Repeat("-", 75))
 	if len(books) != 0 {
+		fmt.Printf("| %-5s | %-30s | %-30s |\n", "ID", "Title", "Author")
+		fmt.Println(strings.Repeat("-", 75))
 		for _, book := range books {
-			fmt.Printf("ID: %d, Title: %s, Author: %s\n", book.ID, book.Title, book.Author)
+			fmt.Printf("| %-5d | %-30s | %-30s |\n", book.ID, book.Title, book.Author)
 		}
 	} else {
-		fmt.Println("none")
+		fmt.Println("None")
 	}
-
+	fmt.Println(strings.Repeat("-", 75))
 }
