@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 	"task3/controllers"
 	"task3/services"
 )
@@ -15,8 +16,9 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for {
-		fmt.Println("\nLibrary Management System")
-		fmt.Println("1. Add Book")
+		fmt.Println("\n\t\t\t Library Management System")
+		fmt.Println(strings.Repeat("-", 75))
+		fmt.Println("\n1. Add Book")
 		fmt.Println("2. Remove Book")
 		fmt.Println("3. Add Member")
 		fmt.Println("4. Borrow Book")
@@ -24,6 +26,7 @@ func main() {
 		fmt.Println("6. List Available Books")
 		fmt.Println("7. List Borrowed Books")
 		fmt.Println("8. Exit")
+		fmt.Println(strings.Repeat("-", 75))
 		fmt.Print("Choose an option: ")
 
 		scanner.Scan()
