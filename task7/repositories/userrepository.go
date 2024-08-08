@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"task7/domain"
+	"task7/infrastructure"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type UserRepository struct {
@@ -47,7 +47,9 @@ func (us *UserRepository) Login(user *domain.User) error {
 		return errors.New("invalid email or password")
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(user.Password)); err != nil {
+	err = infrastructure.Compare(u.Password, user.Password)
+
+	if err != nil {
 		return errors.New("invalid email or password")
 	}
 	return nil
