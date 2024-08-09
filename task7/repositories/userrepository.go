@@ -38,21 +38,21 @@ func (us *UserRepository) Register(user *domain.User) error {
 
 }
 
-func (us *UserRepository) Login(user *domain.User) error {
+func (us *UserRepository) Login(user *domain.User) (string, error) {
 
 	var u domain.User
 	err := us.collection.FindOne(context.TODO(), bson.M{"email": user.Email}).Decode(&u)
 
 	if err != nil {
-		return errors.New("invalid email or password")
+		return u.Role, errors.New("invalid email or password")
 	}
 
 	err = infrastructure.Compare(u.Password, user.Password)
 
 	if err != nil {
-		return errors.New("invalid email or password")
+		return u.Role, errors.New("invalid email or password")
 	}
-	return nil
+	return u.Role, nil
 
 }
 

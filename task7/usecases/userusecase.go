@@ -38,13 +38,13 @@ func (us *UserUsecase) Register(user *domain.User) error {
 
 func (us *UserUsecase) Login(user *domain.User) (string, error) {
 
-	err := us.repository.Login(user)
+	role, err := us.repository.Login(user)
 
 	if err != nil {
 		return "", err
 	}
 
-	token, err := infrastructure.NewToken(user.ID.Hex(), user.Email, user.Role)
+	token, err := infrastructure.NewToken(user.ID.Hex(), user.Email, role)
 
 	if err != nil {
 		return "", err
