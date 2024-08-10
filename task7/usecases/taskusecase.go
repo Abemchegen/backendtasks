@@ -7,10 +7,10 @@ import (
 )
 
 type TaskUsecase struct {
-	repository *repositories.TaskRepository
+	repository repositories.TaskRepositoryInterface
 }
 
-func NewTaskUsecase(repository *repositories.TaskRepository) *TaskUsecase {
+func NewTaskUsecase(repository repositories.TaskRepositoryInterface) *TaskUsecase {
 	return &TaskUsecase{repository: repository}
 }
 
