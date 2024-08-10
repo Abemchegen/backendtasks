@@ -34,3 +34,16 @@ type UserRepositoryInterface interface {
 	GetUser(email string) (*User, error)
 	GetUsers() (*[]User, error)
 }
+type TaskUsecaseInterface interface {
+	CreateTask(newtask *Task, userid string) error
+	GetTask(id string) (*Task, error)
+	GetTasks(userID string) (*[]Task, error)
+	UpdateTask(id string, updatedTask *Task) error
+	RemoveTask(id string) error
+}
+type UserUsecaseInterface interface {
+	Register(user *User) error
+	Login(user *User) (string, error)
+	GetUser(email string) (*User, error)
+	GetUsers() (*[]User, error)
+}

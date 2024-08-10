@@ -3,7 +3,7 @@ package repositories
 import (
 	"context"
 	"errors"
-	"task7/domain"
+	"task8/domain"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"

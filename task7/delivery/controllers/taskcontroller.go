@@ -3,16 +3,15 @@ package controllers
 import (
 	"net/http"
 	"task7/domain"
-	"task7/usecases"
 
 	"github.com/gin-gonic/gin"
 )
 
 type TaskController struct {
-	usecase *usecases.TaskUsecase
+	usecase domain.TaskUsecaseInterface
 }
 
-func NewTaskController(usecase *usecases.TaskUsecase) *TaskController {
+func NewTaskController(usecase domain.TaskUsecaseInterface) *TaskController {
 	return &TaskController{usecase: usecase}
 }
 

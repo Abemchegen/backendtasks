@@ -2,7 +2,7 @@ package usecases
 
 import (
 	"errors"
-	"task7/domain"
+	"task8/domain"
 )
 
 type TaskUsecase struct {
