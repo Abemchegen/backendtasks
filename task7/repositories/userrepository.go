@@ -11,12 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type UserRepositoryInterface interface {
-	Register(user *domain.User) error
-	Login(user *domain.User) (string, error)
-	GetUser(email string) (*domain.User, error)
-	GetUsers() (*[]domain.User, error)
-}
 type UserRepository struct {
 	collection *mongo.Collection
 }

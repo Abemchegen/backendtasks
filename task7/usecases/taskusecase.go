@@ -3,14 +3,13 @@ package usecases
 import (
 	"errors"
 	"task7/domain"
-	"task7/repositories"
 )
 
 type TaskUsecase struct {
-	repository repositories.TaskRepositoryInterface
+	repository domain.TaskRepositoryInterface
 }
 
-func NewTaskUsecase(repository repositories.TaskRepositoryInterface) *TaskUsecase {
+func NewTaskUsecase(repository domain.TaskRepositoryInterface) *TaskUsecase {
 	return &TaskUsecase{repository: repository}
 }
 
