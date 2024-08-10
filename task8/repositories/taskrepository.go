@@ -10,14 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type TaskRepositoryInterface interface {
-	CreateTask(newtask *domain.Task, userid string) error
-	GetTask(id string) (*domain.Task, error)
-	GetTasks(userid string) (*[]domain.Task, error)
-	UpdateTask(id string, updatedtask *domain.Task) error
-	RemoveTask(id string) error
-}
-
 type TaskRepository struct {
 	collection *mongo.Collection
 }

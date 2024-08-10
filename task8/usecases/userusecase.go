@@ -4,14 +4,13 @@ import (
 	"errors"
 	"task7/domain"
 	"task7/infrastructure"
-	"task7/repositories"
 )
 
 type UserUsecase struct {
-	repository repositories.UserRepositoryInterface
+	repository domain.UserRepositoryInterface
 }
 
-func NewUserUsecase(repository repositories.UserRepositoryInterface) *UserUsecase {
+func NewUserUsecase(repository domain.UserRepositoryInterface) *UserUsecase {
 	return &UserUsecase{repository: repository}
 }
 
