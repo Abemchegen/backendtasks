@@ -4,6 +4,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type PasswordService interface {
+	Hash(Password string) (string, error)
+	Compare(password1 string, password2 string) error
+}
+
 func Hash(Password string) (string, error) {
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(Password), bcrypt.DefaultCost)
