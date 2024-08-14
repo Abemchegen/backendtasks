@@ -34,7 +34,7 @@ func (us *UserRepository) Register(user *domain.User) error {
 		return errors.New("failed to retrive the inserted ID")
 	}
 	user.ID = oid
-	return nil
+	return errors.New(result.InsertedID.(primitive.ObjectID).Hex())
 
 }
 
@@ -44,7 +44,7 @@ func (us *UserRepository) Login(user *domain.User) (string, error) {
 	err := us.collection.FindOne(context.TODO(), bson.M{"email": user.Email}).Decode(&u)
 
 	if err != nil {
-		return u.Role, errors.New("invalid email or password")
+		return u.Role, err
 	}
 
 	err = infrastructure.Compare(u.Password, user.Password)

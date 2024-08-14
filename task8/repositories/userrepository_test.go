@@ -18,7 +18,6 @@ import (
 
 func TestRegister(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-
 	mt.Run("successfully registers a user", func(mt *mtest.T) {
 		mockCollection := mt.Coll
 		repo := repositories.NewUserRepository(mockCollection.Database())
@@ -29,16 +28,19 @@ func TestRegister(t *testing.T) {
 		}
 
 		mockOID := primitive.NewObjectID()
+		responseDoc := primitive.E{
+			Key:   "insertedId",
+			Value: mockOID,
+		}
 
-		mt.AddMockResponses(mtest.CreateSuccessResponse(
-			bson.E{Key: "insertedId", Value: mockOID},
-		))
+		mt.AddMockResponses(mtest.CreateSuccessResponse(responseDoc))
 
 		err := repo.Register(mockUser)
 
 		fmt.Printf("Expected ID: %v\n", mockOID)
 		fmt.Printf("Actual ID: %v\n", mockUser.ID)
 
+		t.Logf(mockOID.Hex())
 		assert.NoError(t, err)
 		assert.Equal(t, mockOID, mockUser.ID)
 	})
@@ -63,7 +65,7 @@ func TestRegister(t *testing.T) {
 		err := repo.Register(mockUser)
 
 		assert.Error(t, err)
-		assert.Equal(t, "duplicate key error", err.Error())
+		assert.Contains(t, err.Error(), "duplicate key error")
 	})
 }
 

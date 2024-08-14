@@ -1,7 +1,6 @@
 package usecases
 
 import (
-	"errors"
 	"task8/domain"
 	"task8/infrastructure"
 )
@@ -16,9 +15,6 @@ func NewUserUsecase(repository domain.UserRepositoryInterface) *UserUsecase {
 
 func (us *UserUsecase) Register(user *domain.User) error {
 
-	if user.Email == "" || user.Role == "" {
-		return errors.New("incomplete information")
-	}
 	hashedPassword, err := infrastructure.Hash(user.Password)
 	if err != nil {
 		return err

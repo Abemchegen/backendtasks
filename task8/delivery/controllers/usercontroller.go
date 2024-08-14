@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"net/http"
 	"task8/domain"
 
@@ -23,6 +24,10 @@ func (us *UserController) Register(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	if user.Email == "" || user.Role == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": errors.New("incomplete information").Error()})
+		return
+	}
 
 	err := us.usecase.Register(&user)
 
@@ -31,27 +36,31 @@ func (us *UserController) Register(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, gin.H{"message": "registered successfully", "user": user})
+	ctx.JSON(http.StatusCreated, gin.H{"message": "registered successfully"})
 
 }
 
 func (us *UserController) Login(ctx *gin.Context) {
-
 	var loginUser domain.User
+
 	if err := ctx.ShouldBindJSON(&loginUser); err != nil {
-		ctx.JSON(400, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if loginUser.Email == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "incomplete information"})
 		return
 	}
 
 	token, err := us.usecase.Login(&loginUser)
 
 	if err != nil || token == "" {
-		ctx.JSON(401, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error(), "token": token})
 		return
 	}
 
-	ctx.JSON(200, gin.H{"message": "user logged in successfully", "token": token})
-
+	ctx.JSON(http.StatusOK, gin.H{"message": "user logged in successfully", "token": token})
 }
 
 func (us *UserController) GetUser(ctx *gin.Context) {

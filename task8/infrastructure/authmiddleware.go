@@ -10,6 +10,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type Authorization interface {
+	UserAuthorizaiton() gin.HandlerFunc
+}
+
 func UserAuthorizaiton() gin.HandlerFunc {
 
 	return func(ctx *gin.Context) {

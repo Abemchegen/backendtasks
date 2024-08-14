@@ -6,6 +6,10 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
+type JWTService interface {
+	NewToken(id string, email string, role string) (string, error)
+}
+
 func NewToken(id string, email string, role string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
