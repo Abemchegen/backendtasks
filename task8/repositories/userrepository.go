@@ -13,14 +13,21 @@ import (
 
 type UserRepository struct {
 	collection *mongo.Collection
+	password   infrastructure.PasswordService
 }
 
-func NewUserRepository(db *mongo.Database) *UserRepository {
+func NewUserRepository(db *mongo.Database, ps infrastructure.PasswordService) *UserRepository {
 	collection := db.Collection("users")
-	return &UserRepository{collection: collection}
+	return &UserRepository{collection: collection, password: ps}
 }
 
 func (us *UserRepository) Register(user *domain.User) error {
+
+	hashedPassword, err := us.password.Hash(user.Password)
+	if err != nil {
+		return err
+	}
+	user.Password = hashedPassword
 
 	result, err := us.collection.InsertOne(context.TODO(), user)
 
@@ -34,7 +41,7 @@ func (us *UserRepository) Register(user *domain.User) error {
 		return errors.New("failed to retrive the inserted ID")
 	}
 	user.ID = oid
-	return errors.New(result.InsertedID.(primitive.ObjectID).Hex())
+	return nil
 
 }
 
@@ -47,10 +54,10 @@ func (us *UserRepository) Login(user *domain.User) (string, error) {
 		return u.Role, err
 	}
 
-	err = infrastructure.Compare(u.Password, user.Password)
+	err = us.password.Compare(u.Password, user.Password)
 
 	if err != nil {
-		return u.Role, errors.New("invalid email or password")
+		return u.Role, err
 	}
 	return u.Role, nil
 

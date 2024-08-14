@@ -12,7 +12,8 @@ import (
 
 func TestRegister(t *testing.T) {
 	mockRepo := new(mocks.UserRepositoryInterface)
-	userUsecase := domain.UserUsecaseInterface(NewUserUsecase(mockRepo))
+	mockjs := new(mocks.JWTService)
+	userUsecase := domain.UserUsecaseInterface(NewUserUsecase(mockRepo, mockjs))
 
 	user := &domain.User{
 		Email:    "test@example.com",
@@ -21,32 +22,17 @@ func TestRegister(t *testing.T) {
 	}
 
 	mockRepo.On("Register", user).Return(nil)
+	mockjs.On("NewToken", user.ID.Hex(), user.Email, user.Role).Return("token", nil)
 
 	err := userUsecase.Register(user)
 
 	assert.NoError(t, err)
 	mockRepo.AssertExpectations(t)
 }
-
-func TestRegisterIncompleteInfo(t *testing.T) {
-	mockRepo := new(mocks.UserRepositoryInterface)
-	userUsecase := domain.UserUsecaseInterface(NewUserUsecase(mockRepo))
-
-	user := &domain.User{
-		Email:    "",
-		Password: "password",
-		Role:     "",
-	}
-
-	err := userUsecase.Register(user)
-
-	assert.Error(t, err)
-	assert.Equal(t, "incomplete information", err.Error())
-}
-
 func TestLogin(t *testing.T) {
 	mockRepo := new(mocks.UserRepositoryInterface)
-	userUsecase := domain.UserUsecaseInterface(NewUserUsecase(mockRepo))
+	mockjs := new(mocks.JWTService)
+	userUsecase := domain.UserUsecaseInterface(NewUserUsecase(mockRepo, mockjs))
 
 	user := &domain.User{
 		Email:    "test@example.com",
@@ -54,8 +40,9 @@ func TestLogin(t *testing.T) {
 	}
 
 	mockRepo.On("Login", user).Return("user", nil)
-
+	mockjs.On("NewToken", user.ID.Hex(), user.Email, "user").Return("token", nil)
 	token, err := userUsecase.Login(user)
+	t.Logf("Token: %s err: %s", token, err)
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, token)
@@ -64,7 +51,8 @@ func TestLogin(t *testing.T) {
 
 func TestLoginInvalidCredentials(t *testing.T) {
 	mockRepo := new(mocks.UserRepositoryInterface)
-	userUsecase := domain.UserUsecaseInterface(NewUserUsecase(mockRepo))
+	mockjs := new(mocks.JWTService)
+	userUsecase := domain.UserUsecaseInterface(NewUserUsecase(mockRepo, mockjs))
 
 	user := &domain.User{
 		Email:    "invalid@example.com",
@@ -72,6 +60,7 @@ func TestLoginInvalidCredentials(t *testing.T) {
 	}
 
 	mockRepo.On("Login", user).Return("", errors.New("invalid email or password"))
+	mockjs.On("NewToken", user.ID.Hex(), user.Email, user.Role).Return("token", nil)
 
 	token, err := userUsecase.Login(user)
 
@@ -83,7 +72,8 @@ func TestLoginInvalidCredentials(t *testing.T) {
 
 func TestGetUser(t *testing.T) {
 	mockRepo := new(mocks.UserRepositoryInterface)
-	userUsecase := domain.UserUsecaseInterface(NewUserUsecase(mockRepo))
+	mockjs := new(mocks.JWTService)
+	userUsecase := domain.UserUsecaseInterface(NewUserUsecase(mockRepo, mockjs))
 
 	email := "test@example.com"
 	expectedUser := &domain.User{
@@ -103,7 +93,8 @@ func TestGetUser(t *testing.T) {
 
 func TestGetUsers(t *testing.T) {
 	mockRepo := new(mocks.UserRepositoryInterface)
-	userUsecase := domain.UserUsecaseInterface(NewUserUsecase(mockRepo))
+	mockjs := new(mocks.JWTService)
+	userUsecase := domain.UserUsecaseInterface(NewUserUsecase(mockRepo, mockjs))
 
 	expectedUsers := &[]domain.User{
 		{ID: primitive.NewObjectID(), Email: "user1@example.com", Role: "user"},

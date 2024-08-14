@@ -10,7 +10,15 @@ type JWTService interface {
 	NewToken(id string, email string, role string) (string, error)
 }
 
-func NewToken(id string, email string, role string) (string, error) {
+type jwtService struct {
+}
+
+func NewJWTService() JWTService {
+	return &jwtService{}
+
+}
+
+func (js *jwtService) NewToken(id string, email string, role string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": id,

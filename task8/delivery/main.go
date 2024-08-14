@@ -6,6 +6,7 @@ import (
 	"os"
 	"task8/delivery/controllers"
 	"task8/delivery/routers"
+	"task8/infrastructure"
 	"task8/repositories"
 	"task8/usecases"
 
@@ -41,8 +42,10 @@ func main() {
 	taskusecase := usecases.NewTaskUsecase(taskrepository)
 	taskcontroller := controllers.NewTaskController(taskusecase)
 
-	usererpository := repositories.NewUserRepository(db)
-	userusecase := usecases.NewUserUsecase(usererpository)
+	ps := infrastructure.NewPasswordService()
+	js := infrastructure.NewJWTService()
+	usererpository := repositories.NewUserRepository(db, ps)
+	userusecase := usecases.NewUserUsecase(usererpository, js)
 	usercontroller := controllers.NewUserController(userusecase)
 
 	router := routers.SetRouter(taskcontroller, usercontroller)

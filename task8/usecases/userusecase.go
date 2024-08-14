@@ -7,20 +7,16 @@ import (
 
 type UserUsecase struct {
 	repository domain.UserRepositoryInterface
+	js         infrastructure.JWTService
 }
 
-func NewUserUsecase(repository domain.UserRepositoryInterface) *UserUsecase {
-	return &UserUsecase{repository: repository}
+func NewUserUsecase(repository domain.UserRepositoryInterface, js infrastructure.JWTService) *UserUsecase {
+	return &UserUsecase{repository: repository, js: js}
 }
 
 func (us *UserUsecase) Register(user *domain.User) error {
 
-	hashedPassword, err := infrastructure.Hash(user.Password)
-	if err != nil {
-		return err
-	}
-	user.Password = hashedPassword
-	err = us.repository.Register(user)
+	err := us.repository.Register(user)
 
 	if err != nil {
 		return err
@@ -34,7 +30,7 @@ func (us *UserUsecase) Login(user *domain.User) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	token, err := infrastructure.NewToken(user.ID.Hex(), user.Email, role)
+	token, err := us.js.NewToken(user.ID.Hex(), user.Email, role)
 	if err != nil {
 		return "", err
 	}

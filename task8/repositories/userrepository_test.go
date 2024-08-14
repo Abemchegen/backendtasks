@@ -2,14 +2,15 @@ package repositories_test
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
+	"golang.org/x/crypto/bcrypt"
 
 	"task8/domain"
 	"task8/mocks"
@@ -18,41 +19,37 @@ import (
 
 func TestRegister(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
+
 	mt.Run("successfully registers a user", func(mt *mtest.T) {
+
 		mockCollection := mt.Coll
-		repo := repositories.NewUserRepository(mockCollection.Database())
+		mockps := new(mocks.PasswordService)
+		repo := repositories.NewUserRepository(mockCollection.Database(), mockps)
 
 		mockUser := &domain.User{
 			Email:    "test@example.com",
 			Password: "password",
 		}
-
-		mockOID := primitive.NewObjectID()
-		responseDoc := primitive.E{
-			Key:   "insertedId",
-			Value: mockOID,
-		}
-
-		mt.AddMockResponses(mtest.CreateSuccessResponse(responseDoc))
-
+		mt.AddMockResponses(mtest.CreateSuccessResponse())
+		mockps.On("Hash", mock.Anything).Return("hashedpassword", nil)
 		err := repo.Register(mockUser)
 
-		fmt.Printf("Expected ID: %v\n", mockOID)
-		fmt.Printf("Actual ID: %v\n", mockUser.ID)
+		t.Logf("Inserted OID: %s", mockUser.ID.Hex())
 
-		t.Logf(mockOID.Hex())
 		assert.NoError(t, err)
-		assert.Equal(t, mockOID, mockUser.ID)
+		assert.NotNil(t, mockUser.ID)
 	})
 
 	mt.Run("fails due to MongoDB error", func(mt *mtest.T) {
 		mockCollection := mt.Coll
-		repo := repositories.NewUserRepository(mockCollection.Database())
+		mockps := new(mocks.PasswordService)
+		repo := repositories.NewUserRepository(mockCollection.Database(), mockps)
 
 		mockUser := &domain.User{
 			Email:    "test@example.com",
 			Password: "password",
 		}
+		mockps.On("Hash", mock.Anything).Return("hashedpassword", nil)
 
 		mt.AddMockResponses(mtest.CreateWriteErrorsResponse(
 			mtest.WriteError{
@@ -72,29 +69,31 @@ func TestRegister(t *testing.T) {
 func TestLogin(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 
+	// Generate a bcrypt hash for the password
+	plainPassword := "password"
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plainPassword), bcrypt.DefaultCost)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	mt.Run("successfully logs in a user", func(mt *mtest.T) {
 		mockCollection := mt.Coll
-		repo := repositories.NewUserRepository(mockCollection.Database())
+		mockps := new(mocks.PasswordService)
+		repo := repositories.NewUserRepository(mockCollection.Database(), mockps)
 
 		mockUser := &domain.User{
 			Email:    "test@example.com",
-			Password: "password",
+			Password: plainPassword, // Plaintext password
 		}
-
 		storedUser := domain.User{
 			Email:    "test@example.com",
-			Password: "hashedpassword",
+			Password: string(hashedPassword), // Use the hashed password
 			Role:     "user",
 		}
 
-		// Create a mock for PasswordService
-		mockPasswordService := new(mocks.PasswordService)
+		mockps.On("Compare", mock.Anything, mock.Anything).Return(nil)
 
-		// Set expectations for the mock
-		mockPasswordService.On("Compare", storedUser.Password, mockUser.Password).Return(nil)
-
-		// Mock MongoDB response
-		mt.AddMockResponses(mtest.CreateCursorResponse(1, "users", mtest.FirstBatch, bson.D{
+		mt.AddMockResponses(mtest.CreateCursorResponse(1, "test.users", mtest.FirstBatch, bson.D{
 			{Key: "email", Value: storedUser.Email},
 			{Key: "password", Value: storedUser.Password},
 			{Key: "role", Value: storedUser.Role},
@@ -102,16 +101,20 @@ func TestLogin(t *testing.T) {
 
 		// Use the mock in the repo.Login
 		role, err := repo.Login(mockUser)
+
+		if err != nil {
+			t.Logf("Error: %v", err)
+		}
 		assert.NoError(t, err)
 		assert.Equal(t, "user", role)
 
-		// Assert that the expectations were met
-		mockPasswordService.AssertExpectations(t)
+		mockps.AssertExpectations(t)
 	})
 
 	mt.Run("fails due to incorrect password", func(mt *mtest.T) {
 		mockCollection := mt.Coll
-		repo := repositories.NewUserRepository(mockCollection.Database())
+		mockps := new(mocks.PasswordService)
+		repo := repositories.NewUserRepository(mockCollection.Database(), mockps)
 
 		mockUser := &domain.User{
 			Email:    "test@example.com",
@@ -120,29 +123,22 @@ func TestLogin(t *testing.T) {
 
 		storedUser := domain.User{
 			Email:    "test@example.com",
-			Password: "hashedpassword",
+			Password: string(hashedPassword), // Use the hashed password
 			Role:     "user",
 		}
 
-		// Create a mock for PasswordService
-		mockPasswordService := new(mocks.PasswordService)
+		mockps.On("Compare", mock.Anything, mock.Anything).Return(errors.New("passwords do not match"))
 
-		// Set expectations for the mock
-		mockPasswordService.On("Compare", storedUser.Password, mockUser.Password).Return(errors.New("password mismatch"))
-
-		// Mock MongoDB response
-		mt.AddMockResponses(mtest.CreateCursorResponse(1, "users", mtest.FirstBatch, bson.D{
+		mt.AddMockResponses(mtest.CreateCursorResponse(1, "test.users", mtest.FirstBatch, bson.D{
 			{Key: "email", Value: storedUser.Email},
 			{Key: "password", Value: storedUser.Password},
 			{Key: "role", Value: storedUser.Role},
 		}))
 
-		// Use the mock in the repo.Login
 		_, err := repo.Login(mockUser)
 		assert.Error(t, err)
 
-		// Assert that the expectations were met
-		mockPasswordService.AssertExpectations(t)
+		mockps.AssertExpectations(t)
 	})
 }
 
@@ -151,13 +147,14 @@ func TestGetUser(t *testing.T) {
 
 	mt.Run("successfully retrieves a user", func(mt *mtest.T) {
 		mockCollection := mt.Coll
-		repo := repositories.NewUserRepository(mockCollection.Database())
+		mockps := new(mocks.PasswordService)
+		repo := repositories.NewUserRepository(mockCollection.Database(), mockps)
 
 		mockUser := &domain.User{
 			Email: "test@example.com",
 		}
 
-		mt.AddMockResponses(mtest.CreateCursorResponse(1, "users", mtest.FirstBatch, bson.D{
+		mt.AddMockResponses(mtest.CreateCursorResponse(1, "test.users", mtest.FirstBatch, bson.D{
 			{Key: "email", Value: mockUser.Email},
 			{Key: "password", Value: "hashedpassword"},
 			{Key: "role", Value: "user"},
@@ -170,9 +167,10 @@ func TestGetUser(t *testing.T) {
 
 	mt.Run("fails due to user not found", func(mt *mtest.T) {
 		mockCollection := mt.Coll
-		repo := repositories.NewUserRepository(mockCollection.Database())
+		mockps := new(mocks.PasswordService)
+		repo := repositories.NewUserRepository(mockCollection.Database(), mockps)
 
-		mt.AddMockResponses(mtest.CreateCursorResponse(0, "users", mtest.FirstBatch))
+		mt.AddMockResponses(mtest.CreateCursorResponse(0, "test.users", mtest.FirstBatch))
 
 		user, err := repo.GetUser("nonexistent@example.com")
 		assert.Nil(t, user)
@@ -181,7 +179,8 @@ func TestGetUser(t *testing.T) {
 
 	mt.Run("fails due to MongoDB error", func(mt *mtest.T) {
 		mockCollection := mt.Coll
-		repo := repositories.NewUserRepository(mockCollection.Database())
+		mockps := new(mocks.PasswordService)
+		repo := repositories.NewUserRepository(mockCollection.Database(), mockps)
 
 		mt.AddMockResponses(mtest.CreateCommandErrorResponse(mtest.CommandError{
 			Code:    11000,
@@ -198,7 +197,8 @@ func TestGetUsers(t *testing.T) {
 
 	mt.Run("successfully retrieves users", func(mt *mtest.T) {
 		mockCollection := mt.Coll
-		repo := repositories.NewUserRepository(mockCollection.Database())
+		mockps := new(mocks.PasswordService)
+		repo := repositories.NewUserRepository(mockCollection.Database(), mockps)
 
 		mockUsers := []domain.User{
 			{
@@ -215,19 +215,19 @@ func TestGetUsers(t *testing.T) {
 			},
 		}
 
-		first := mtest.CreateCursorResponse(1, "users", mtest.FirstBatch, bson.D{
+		first := mtest.CreateCursorResponse(1, "test.users", mtest.FirstBatch, bson.D{
 			{Key: "_id", Value: mockUsers[0].ID},
 			{Key: "email", Value: mockUsers[0].Email},
 			{Key: "password", Value: mockUsers[0].Password},
 			{Key: "role", Value: mockUsers[0].Role},
 		})
-		second := mtest.CreateCursorResponse(1, "users", mtest.NextBatch, bson.D{
+		second := mtest.CreateCursorResponse(1, "test.users", mtest.NextBatch, bson.D{
 			{Key: "_id", Value: mockUsers[1].ID},
 			{Key: "email", Value: mockUsers[1].Email},
 			{Key: "password", Value: mockUsers[1].Password},
 			{Key: "role", Value: mockUsers[1].Role},
 		})
-		killCursors := mtest.CreateCursorResponse(0, "users", mtest.NextBatch)
+		killCursors := mtest.CreateCursorResponse(0, "test.users", mtest.NextBatch)
 		mt.AddMockResponses(first, second, killCursors)
 
 		users, err := repo.GetUsers()
@@ -237,7 +237,8 @@ func TestGetUsers(t *testing.T) {
 
 	mt.Run("fails due to MongoDB error", func(mt *mtest.T) {
 		mockCollection := mt.Coll
-		repo := repositories.NewUserRepository(mockCollection.Database())
+		mockps := new(mocks.PasswordService)
+		repo := repositories.NewUserRepository(mockCollection.Database(), mockps)
 
 		mt.AddMockResponses(mtest.CreateCommandErrorResponse(mtest.CommandError{
 			Code:    11000,

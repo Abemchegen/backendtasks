@@ -8,8 +8,14 @@ type PasswordService interface {
 	Hash(Password string) (string, error)
 	Compare(password1 string, password2 string) error
 }
+type passwordService struct {
+}
 
-func Hash(Password string) (string, error) {
+func NewPasswordService() PasswordService {
+	return &passwordService{}
+}
+
+func (ps *passwordService) Hash(Password string) (string, error) {
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -18,7 +24,7 @@ func Hash(Password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
-func Compare(password1 string, password2 string) error {
+func (ps *passwordService) Compare(password1 string, password2 string) error {
 
 	if err := bcrypt.CompareHashAndPassword([]byte(password1), []byte(password2)); err != nil {
 		return err
